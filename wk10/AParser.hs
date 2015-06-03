@@ -57,3 +57,43 @@ posInt = Parser f
 ------------------------------------------------------------
 -- Your code goes below here
 ------------------------------------------------------------
+
+-- Exercise 1
+-- Implement a functor instance for Parser
+
+instance Functor Parser where
+  fmap f (Parser a) = Parser b
+    where
+      b xs = case a xs of
+                 Nothing   -> Nothing
+                 Just pair -> Just $ first f pair
+
+-- From hint:
+first :: (a -> b) -> (a,c) -> (b,c)
+first f (a,c) = (f a, c)
+
+-- Exercise 2
+-- Now implement an Applicative instance for Parser
+
+{-
+instance Applicative Parser where
+  -- pure a represents the parser which consumes no input and sucessfully
+  -- returns a result of a
+  -- pure  :: a -> Parser a
+  pure a = Parser (\xs -> Just (a,xs))
+
+  -- p1 <*> p2 represents the parser which first runs p1 (which will consume
+  -- some input and produce a function), then passes the "remaining" input 
+  -- to p2 (which consumes more input and produces some value), then returns
+  -- the result of applying the function to the value. If either fail the
+  -- whole thing should fail
+  -- (<*>) :: Parser (a -> b) -> Parser a -> Parser b
+  f <*> g = (\x -> ) 
+-}
+
+
+
+
+
+
+
