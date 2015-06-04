@@ -60,6 +60,7 @@ posInt = Parser f
 
 -- Exercise 1
 -- Implement a functor instance for Parser
+-- fmap :: (a -> b) -> f a -> f b
 
 instance Functor Parser where
   fmap f (Parser a) = Parser b
@@ -75,7 +76,6 @@ first f (a,c) = (f a, c)
 -- Exercise 2
 -- Now implement an Applicative instance for Parser
 
-{-
 instance Applicative Parser where
   -- pure a represents the parser which consumes no input and sucessfully
   -- returns a result of a
@@ -88,12 +88,43 @@ instance Applicative Parser where
   -- the result of applying the function to the value. If either fail the
   -- whole thing should fail
   -- (<*>) :: Parser (a -> b) -> Parser a -> Parser b
-  f <*> g = (\x -> ) 
--}
+  p1 <*> p2 =  Parser b
+    where
+      b xs = case runParser p1 xs of
+                 Just (f, ys) -> runParser (fmap f p2) ys
+                 Nothing      -> Nothing
 
+-- Exercise 3
+-- Testing the Applicative instance
 
+-- runParser abParser "abcdef" == Just (('a','b'), "cdef")
+-- runParser abParser "aebcdf" == Nothing
+abParser :: Parser (Char, Char)
+abParser = (\a b -> (a,b)) <$> char 'a' <*> char 'b'
 
+-- runParser abParser_ "abcdef" = Just((), "cdef")
+abParser_ :: Parser ()
+abParser_ = (\a b -> ()) <$> char 'a' <*> char 'b'
 
+-- runParser intPair "12 34" = Just ([12,34],"")
+intPair :: Parser [Integer]
+intPair = (\a _ b -> [a,b]) <$> posInt <*> char ' ' <*> posInt
 
+-- Exercise 4
+-- Write an "alternative" instance for Parser
+instance Alternative Parser where
+  empty = Parser (\xs-> Nothing)
+  p1 <|> p2 = Parser p
+    where
+      p xs = case runParser p1 xs of
+                 Nothing -> runParser p2 xs
+                 result  -> result
+
+-- Exercise 5
+-- runParser intOrUppercase "342abcd" == Just ((), "abcd")
+-- runParser intOrUppercase "XYZ" == Just ((), "YZ")
+-- runParser intOrUppercase "foo" == Nothing
+intOrUppercase :: Parser ()
+intOrUppercase = (\a -> ()) <$> posInt <|> (\a -> ()) <$> satisfy isUpper
 
 
