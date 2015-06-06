@@ -32,26 +32,20 @@ data Battlefield = Battlefield { attackers :: Army, defenders :: Army }
   deriving (Show)
 
 -- Exercise 2
-
 battle :: Battlefield -> Rand StdGen Battlefield
-battle bf = (updateCasualties bf . getCasualties) <$> dieBattle (currentSkirmish bf)
-
-updateCasualties :: Battlefield -> (Int, Int) -> Battlefield
-updateCasualties (Battlefield atk def) (x,y) = Battlefield (atk-x) (def-y)
-
-getCasualties :: [(DieValue,DieValue)] -> (Int, Int)
-getCasualties = (\(a,b) -> (length a, length b)) . partition (\pair -> fst pair <= snd pair)
-
-dieBattle :: Battlefield -> Rand StdGen [(DieValue,DieValue)]
-dieBattle bf = zip <$> dieList (attackers bf) <*> dieList (defenders bf)
+battle bf = do
+    attackRolls <- replicateM (numAttackers bf) die
+    defendRolls <- replicateM (numDefenders bf) die
+    let pairedRolls = zip (reverse . sort $ attackRolls) (reverse . sort $ defendRolls)
+    return $ foldl applySkirmish bf pairedRolls
   where
-    dieList len = reverse . sort <$> dice len
-    dice n = sequence (replicate n die)
+    numAttackers = min 3 . (subtract 1) . attackers
+    numDefenders = min 2 . defenders
 
-currentSkirmish :: Battlefield -> Battlefield
-currentSkirmish b
-  | attackers b < 2 || defenders b < 1 = Battlefield 0 0
-  | otherwise = Battlefield (min (attackers b - 1) 3) (min (defenders b) 2)
+applySkirmish :: Battlefield -> (DieValue,DieValue) -> Battlefield
+applySkirmish (Battlefield a d) (atkDie,defDie)
+  | atkDie > defDie = Battlefield a (d-1)
+  | otherwise       = Battlefield (a-1) d
 
 -- Exercise 3
 invade :: Battlefield -> Rand StdGen Battlefield
